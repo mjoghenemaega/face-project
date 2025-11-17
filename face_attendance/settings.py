@@ -120,6 +120,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+CORS_ALLOWED_ORIGINS = os.getenv(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:8000,http://127.0.0.1:8000"
+    "https://face-project-hj96.onrender.com/"
+    "https://face-project-hj96.onrender.com"
+).split(",")
+
 AUTH_USER_MODEL = 'accounts.User'
 
 
