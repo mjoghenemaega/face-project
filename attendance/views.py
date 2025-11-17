@@ -20,6 +20,25 @@ from PIL import Image
 from django.utils import timezone
 from django.db import IntegrityError
 
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from .serializers import AttendanceUploadSerializer
+from accounts.models import User, TeacherStudent
+from .models import AttendanceRecord
+from .utils import base64_to_pil, detect_and_crop_face, compute_phash, phash_to_hex, compare_phash
+from cloudinary.uploader import upload
+import base64
+import io
+from PIL import Image
+from django.utils import timezone
+from django.db import IntegrityError
+
+# threshold specified by you (30%)
+MIN_CONFIDENCE = 50.0
+
+
 class AttendanceUploadView(APIView):
     """
     POST (multipart/form-data):
@@ -66,7 +85,7 @@ class AttendanceUploadView(APIView):
 
             # Convert uploaded image file to PIL
             try:
-                pil_img = Image.open(image_file)
+                pil_img = Image.open(image_file).convert("RGB")
             except Exception as e:
                 return Response({"detail": "Invalid image file", "error": str(e)}, 
                               status=status.HTTP_400_BAD_REQUEST)
@@ -97,6 +116,29 @@ class AttendanceUploadView(APIView):
                     "message": "Face verification failed"
                 }, status=status.HTTP_401_UNAUTHORIZED)
 
+            # Upload to Cloudinary
+            cloudinary_url_str = None
+            try:
+                img_io = io.BytesIO()
+                pil_img.save(img_io, format='JPEG')
+                img_io.seek(0)
+                
+                upload_response = upload(
+                    img_io,
+                    folder='attendance/',
+                    public_id=f"{user.username}_{rfid_uid}_{attendance_type}_{timezone.now().timestamp()}",
+                    resource_type='image',
+                    overwrite=False
+                )
+                
+                cloudinary_url_str = upload_response['secure_url']
+                
+            except Exception as e:
+                return Response({
+                    "detail": "Failed to upload image to Cloudinary",
+                    "error": str(e)
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             # Save attendance record
             try:
                 current_time = timezone.localtime()
@@ -111,16 +153,11 @@ class AttendanceUploadView(APIView):
                 if attendance_type == 'OUT':
                     is_early = current_time.hour < 16
 
-                # Save image
-                img_io = io.BytesIO()
-                pil_img.save(img_io, format='JPEG')
-                img_content = ContentFile(img_io.getvalue(), 
-                                        name=f"{user.username}_{rfid_uid}_{attendance_type}.jpg")
-
+                # Create attendance record with Cloudinary URL
                 attendance = AttendanceRecord.objects.create(
                     student=user,
                     rfid_uid=rfid_uid,
-                    image=img_content,
+                    image=cloudinary_url_str,  # Store Cloudinary URL
                     match_confidence=similarity,
                     granted=granted,
                     attendance_type=attendance_type
@@ -140,6 +177,7 @@ class AttendanceUploadView(APIView):
                     "timestamp": attendance.timestamp,
                     "is_late": is_late,
                     "is_early": is_early,
+                    "image_url": cloudinary_url_str,
                     "message": message
                 }, status=status.HTTP_200_OK)
 
@@ -157,6 +195,150 @@ class AttendanceUploadView(APIView):
                 "detail": "An error occurred",
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ...rest of your views (encode_image, teacher_dashboard, teacher_login, teacher_signup)...
+
+
+
+
+# class AttendanceUploadView(APIView):
+#     """
+#     POST (multipart/form-data):
+#     {
+#         "rfid_uid": "UID-STRING",
+#         "image": <uploaded file>
+#     }
+#     """
+#     permission_classes = [permissions.AllowAny]
+
+#     def post(self, request):
+#         rfid_uid = request.data.get('rfid_uid')
+#         image_file = request.FILES.get('image')
+
+#         if not rfid_uid or not image_file:
+#             return Response(
+#                 {"detail": "rfid_uid and image are required."},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+
+#         # Find user by RFID
+#         try:
+#             user = User.objects.get(rfid_uid=rfid_uid)
+
+#             # Determine if this is class IN or OUT
+#             today = timezone.now().date()
+#             existing_attendance = AttendanceRecord.objects.filter(
+#                 student=user,
+#                 timestamp__date=today,
+#                 granted=True
+#             ).order_by('timestamp')
+
+#             # Determine attendance type
+#             attendance_type = 'IN'
+#             if existing_attendance.exists():
+#                 last_record = existing_attendance.last()
+#                 if last_record.attendance_type == 'IN':
+#                     attendance_type = 'OUT'
+#                 elif last_record.attendance_type == 'OUT':
+#                     return Response({
+#                         "granted": False,
+#                         "message": "Already checked out for today"
+#                     }, status=status.HTTP_400_BAD_REQUEST)
+
+#             # Convert uploaded image file to PIL
+#             try:
+#                 pil_img = Image.open(image_file)
+#             except Exception as e:
+#                 return Response({"detail": "Invalid image file", "error": str(e)}, 
+#                               status=status.HTTP_400_BAD_REQUEST)
+
+#             # Detect and crop face
+#             cropped = detect_and_crop_face(pil_img)
+#             if cropped is None:
+#                 return Response({"detail": "No face detected in uploaded image."}, 
+#                               status=status.HTTP_400_BAD_REQUEST)
+
+#             # Compute perceptual hash for uploaded face
+#             uploaded_phash = compute_phash(cropped)
+#             uploaded_hex = phash_to_hex(uploaded_phash)
+
+#             # Check if user has stored reference face hash
+#             if not user.face_hash:
+#                 return Response({"detail": "User does not have enrolled face."}, 
+#                               status=status.HTTP_400_BAD_REQUEST)
+
+#             # Compare uploaded face with stored hash
+#             similarity = compare_phash(uploaded_hex, user.face_hash)
+#             granted = similarity >= MIN_CONFIDENCE
+
+#             if not granted:
+#                 return Response({
+#                     "granted": False,
+#                     "match_confidence": similarity,
+#                     "message": "Face verification failed"
+#                 }, status=status.HTTP_401_UNAUTHORIZED)
+
+#             # Save attendance record
+#             try:
+#                 current_time = timezone.localtime()
+#                 is_late = False
+#                 is_early = False
+
+#                 # Check if late arrival (after 8:00 AM)
+#                 if attendance_type == 'IN':
+#                     is_late = current_time.hour > 8 or (current_time.hour == 8 and current_time.minute > 0)
+
+#                 # Check if early departure (before 4:00 PM)
+#                 if attendance_type == 'OUT':
+#                     is_early = current_time.hour < 16
+
+#                 # Save image
+#                 img_io = io.BytesIO()
+#                 pil_img.save(img_io, format='JPEG')
+#                 img_content = ContentFile(img_io.getvalue(), 
+#                                         name=f"{user.username}_{rfid_uid}_{attendance_type}.jpg")
+
+#                 attendance = AttendanceRecord.objects.create(
+#                     student=user,
+#                     rfid_uid=rfid_uid,
+#                     image=img_content,
+#                     match_confidence=similarity,
+#                     granted=granted,
+#                     attendance_type=attendance_type
+#                 )
+
+#                 # Prepare response message
+#                 message = f"{'Entry' if attendance_type == 'IN' else 'Exit'} recorded successfully"
+#                 if is_late:
+#                     message += " (Late arrival)"
+#                 if is_early:
+#                     message += " (Early departure)"
+
+#                 return Response({
+#                     "granted": granted,
+#                     "match_confidence": similarity,
+#                     "attendance_type": attendance_type,
+#                     "timestamp": attendance.timestamp,
+#                     "is_late": is_late,
+#                     "is_early": is_early,
+#                     "message": message
+#                 }, status=status.HTTP_200_OK)
+
+#             except IntegrityError:
+#                 return Response({
+#                     "granted": False,
+#                     "message": f"Already recorded {attendance_type} attendance today"
+#                 }, status=status.HTTP_400_BAD_REQUEST)
+
+#         except User.DoesNotExist:
+#             return Response({"detail": "RFID not registered."}, 
+#                           status=status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response({
+#                 "detail": "An error occurred",
+#                 "error": str(e)
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 import base64

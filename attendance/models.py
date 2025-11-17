@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from cloudinary.models import CloudinaryField
 
 class AttendanceRecord(models.Model):
     ATTENDANCE_TYPE = [
@@ -11,7 +12,7 @@ class AttendanceRecord(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     rfid_uid = models.CharField(max_length=128)
-    image = models.ImageField(upload_to='attendance/')
+    image = CloudinaryField('image', folder='attendance/')
     match_confidence = models.FloatField()  # percentage 0..100
     granted = models.BooleanField(default=False)
     attendance_type = models.CharField(max_length=3, choices=ATTENDANCE_TYPE, default='IN')

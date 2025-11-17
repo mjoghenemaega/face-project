@@ -1,6 +1,7 @@
 # accounts/models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from cloudinary.models import CloudinaryField
 import numpy as np
 
 
@@ -14,7 +15,7 @@ class User(AbstractUser):
     # store pHash hex string for lightweight matching
     face_hash = models.CharField(max_length=128, blank=True, null=True)
     # optional: store the face image (base64 or imagefield)
-    face_image = models.ImageField(upload_to='faces/', blank=True, null=True)
+    face_image = CloudinaryField('image', blank=True, null=True, folder='faces/')
     face_features = models.BinaryField(null=True, blank=True)
 
 

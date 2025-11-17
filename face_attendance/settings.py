@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+import cloudinary
+import cloudinary.api
+import cloudinary.uploader
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,8 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-v1^b3$as9drfe13&hrssss8qn8d8c*$pld8mjn=gtw83)1zc=5711&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-
+DEBUG = True
 ALLOWED_HOSTS = ['*','aws-1-eu-north-1.pooler.supabase.com']
 
 
@@ -39,12 +41,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'attendance',
+    'cloudinary',
+    'cloudinary_storage',
 
 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -121,12 +126,22 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 
-CORS_ALLOWED_ORIGINS = os.getenv(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:8000,http://127.0.0.1:8000"
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "https://face-project-hj96.onrender.com",
+    "https://face-project-hj96.onrender.com/"  # Your Render backend URL
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "https://face-project-hj96.onrender.com",
     "https://face-project-hj96.onrender.com/"
-    "https://face-project-hj96.onrender.com"
-).split(",")
+]
+
+
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -164,7 +179,14 @@ MEDIA_ROOT = BASE_DIR/"media"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+cloudinary.config(
+    cloud_name='dbcahe6sr',
+    api_key='775613151785821',
+    api_secret="rTfd5vC-I3deTxwIoFK1cCWus48"
+)
 
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
 MEDIA_URL = '/faces/'
