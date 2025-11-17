@@ -139,7 +139,7 @@
       formData.append("image_file", capturedBlob, "snapshot.jpg");
 
       try {
-        const response = await fetch("http://127.0.0.1:8000/accounts/enroll", {
+        const response = await fetch("https://face-project-hj96.onrender.com/accounts/enroll", {
           method: "POST",
           body: formData
         });
