@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "face_attendance/wsgi.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "face_attendance/wsgi.py"
+    }
+  ]
+}

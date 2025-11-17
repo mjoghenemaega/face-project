@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Class Attendance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation Bar - Full Width -->
+    <nav class="bg-blue-600 text-white w-full">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <h1 class="text-2xl font-bold">Class Attendance System</h1>
+                <div class="flex items-center space-x-4">
+                    <span class="text-lg">Welcome, {{ request.user.get_full_name }}</span>
+                    <form method="post" action="{% url 'logout' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">{{ user.get_username }} Class Dashboard</h1>
+            <p class="text-gray-600">Class Hours: 8:00 AM - 4:00 PM</p>
+        </div>
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <h3 class="text-lg font-medium text-gray-500">Total Students</h3>
+                <p class="mt-2 text-4xl font-bold text-blue-600">{{ total_students }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <h3 class="text-lg font-medium text-gray-500">Present Today</h3>
+                <p class="mt-2 text-4xl font-bold text-green-600">{{ present_today }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <h3 class="text-lg font-medium text-gray-500">Attendance Rate</h3>
+                <p class="mt-2 text-4xl font-bold text-indigo-600">
+                    {% if total_students %}
+                        {{ present_today|divisibleby:total_students|floatformat:1 }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <!-- Date Filter -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h3 class="text-lg font-medium text-gray-500 mb-4">Filter by Date</h3>
+        <div class="flex space-x-4">
+            <input type="date" id="dateFilter" 
+                   class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                   value="{{ today|date:'Y-m-d' }}">
+            <button onclick="filterByDate()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                Apply Filter
+            </button>
+        </div>
+    </div>
+    <!-- Quick Stats -->
+ <div class="bg-white rounded-xl shadow-lg p-6">
+    <h3 class="text-lg font-medium text-gray-500 mb-4">Quick Stats</h3>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <p class="text-sm text-gray-500">Late Arrivals Today</p>
+            <p class="text-xl font-bold text-yellow-600">
+                {% with late_count=0 %}
+                    {% for stat in student_stats %}
+                        {% if stat.is_late %}
+                            {% with late_count=late_count|add:1 %}{% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ late_count }}
+                {% endwith %}
+            </p>
+        </div>
+        <div>
+            <p class="text-sm text-gray-500">Early Departures</p>
+            <p class="text-xl font-bold text-orange-600">
+                {% with early_count=0 %}
+                    {% for stat in student_stats %}
+                        {% if stat.left_early %}
+                            {% with early_count=early_count|add:1 %}{% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ early_count }}
+                {% endwith %}
+            </p>
+        </div>
+    </div>
+</div>
+</div>
+
+        <!-- Student List Table -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-blue-700">Students Attendance</h2>
+                <div class="flex space-x-2">
+                    <input type="text" 
+                           placeholder="Search students..." 
+                           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           id="searchInput">
+                             <button onclick="exportToCSV()" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Export to CSV
+                    </button>
+                      <button onclick="printReport()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            Print Report
+        </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Today's Status</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class In Time</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class Out Time</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attendance Rate</th>       </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for stat in student_stats %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-12 w-12">
+                                        {% if stat.student.face_image %}
+                                            <img class="h-12 w-12 rounded-full object-cover border-2 border-gray-200" 
+                                                 src="{{ stat.student.face_image.url }}" 
+                                                 alt="{{ stat.student.get_full_name }}">
+                                        {% else %}
+                                            <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <span class="text-xl text-gray-500">{{ stat.student.get_full_name|first }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ stat.student.get_full_name }}</div>
+                                        <div class="text-sm text-gray-500">{{ stat.student.username }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-4 py-2 inline-flex text-sm leading-5 font-semibold rounded-full 
+                                    {% if stat.today_attendance %}
+                                        bg-green-100 text-green-800
+                                    {% else %}
+                                        bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ stat.today_attendance|yesno:"Present,Absent" }}
+                                </span>
+                            </td>
+                            <!-- <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ stat.last_seen|default:"Never" }}
+                            </td> -->
+
+  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ stat.class_in_time|default:"--" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ stat.class_out_time|default:"--" }}
+                            </td>
+
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-48 bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
+                                             style="width: {{ stat.attendance_percentage }}%">
+                                        </div>
+                                    </div>
+                                    <span class="ml-4 text-sm font-medium text-gray-700">
+                                        {{ stat.attendance_percentage|floatformat:1 }}%
+                                    </span>
+                                </div>
+                            </td>
+                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const tableRows = document.querySelectorAll('tbody tr');
+
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+
+            tableRows.forEach(row => {
+                const studentName = row.querySelector('.text-gray-900').textContent.toLowerCase();
+                const username = row.querySelector('.text-gray-500').textContent.toLowerCase();
+
+                if (studentName.includes(searchTerm) || username.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Add hover effects
+        tableRows.forEach(row => {
+            row.addEventListener('mouseover', () => {
+                row.classList.add('bg-gray-50');
+            });
+            row.addEventListener('mouseout', () => {
+                row.classList.remove('bg-gray-50');
+            });
+        });
+    </script>
+     <script>
+        // ...existing search and hover scripts...
+
+        function exportToCSV() {
+            const table = document.getElementById('attendanceTable');
+            let csv = [];
+            
+            // Get headers
+            let headers = [];
+            for(let cell of table.querySelectorAll('thead th')) {
+                headers.push(cell.textContent.trim());
+            }
+            csv.push(headers.join(','));
+            
+            // Get rows
+            for(let row of table.querySelectorAll('tbody tr')) {
+                let rowData = [];
+                // Student name
+                rowData.push(row.querySelector('.text-gray-900').textContent);
+                // Status
+                rowData.push(row.querySelector('.rounded-full').textContent.trim());
+                // Class in time
+                rowData.push(row.querySelectorAll('td')[2].textContent.trim());
+                // Class out time
+                rowData.push(row.querySelectorAll('td')[3].textContent.trim());
+                // Attendance rate
+                rowData.push(row.querySelector('.text-gray-700').textContent.trim());
+                
+                csv.push(rowData.join(','));
+            }
+            
+            // Download CSV
+            const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `attendance_report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

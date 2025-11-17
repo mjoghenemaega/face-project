@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Enrollment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Navigation Bar -->
+  <nav class="bg-blue-600 text-white p-4">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold">Face Attendance System</h1>
+      <div class="flex items-center space-x-4">
+   
+        <span>Welcome, student </span>
+        <a href="#"" class="bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto p-6">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg mx-auto p-8">
+      <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Enroll New Student</h2>
+
+      <form id="enrollForm" enctype="multipart/form-data" class="space-y-4">
+        <div>
+          <label class="block text-gray-700 font-medium">Username</label>
+          <input type="text" name="username" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400" required>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 font-medium">Password</label>
+          <input type="password" name="password" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400" required>
+        </div>
+
+        <!-- Hidden role field -->
+        <input type="hidden" name="role" value="student">
+
+        <div>
+          <label class="block text-gray-700 font-medium">RFID UID</label>
+          <input type="text" name="rfid_uid" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400" required>
+        </div>
+
+        <!-- Camera Section -->
+        <div class="space-y-2">
+          <label class="block text-gray-700 font-medium">Photo Capture</label>
+          <button type="button" id="startCamera" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full">Start Camera</button>
+          <div id="cameraContainer" class="hidden">
+            <video id="camera" autoplay class="rounded-lg border border-gray-300 w-full"></video>
+            <button type="button" id="captureBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full mt-2">Capture Photo</button>
+          </div>
+          <canvas id="snapshot" class="hidden"></canvas>
+          <div id="previewContainer" class="hidden mt-2">
+            <img id="preview" class="rounded-lg border border-gray-300 w-full">
+            <button type="button" id="retakePhoto" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg w-full mt-2">Retake Photo</button>
+          </div>
+        </div>
+
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full font-semibold">Enroll</button>
+      </form>
+
+      <div id="response" class="mt-6 text-center"></div>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('snapshot');
+    const startCameraBtn = document.getElementById('startCamera');
+    const cameraContainer = document.getElementById('cameraContainer');
+    const captureBtn = document.getElementById('captureBtn');
+    const previewContainer = document.getElementById('previewContainer');
+    const preview = document.getElementById('preview');
+    const retakeBtn = document.getElementById('retakePhoto');
+    const responseBox = document.getElementById('response');
+    let capturedBlob = null;
+    let stream = null;
+
+    // Start camera button click handler
+    startCameraBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        cameraContainer.classList.remove('hidden');
+        startCameraBtn.classList.add('hidden');
+      } catch (err) {
+        alert("Camera access denied: " + err.message);
+      }
+    });
+
+    // Capture photo
+    captureBtn.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob(blob => {
+        capturedBlob = blob;
+        preview.src = URL.createObjectURL(blob);
+        previewContainer.classList.remove('hidden');
+        cameraContainer.classList.add('hidden');
+        
+        // Stop the camera
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+      }, 'image/jpeg', 0.8); // Added quality parameter
+    });
+
+    // Retake photo
+    retakeBtn.addEventListener('click', async () => {
+      previewContainer.classList.add('hidden');
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        cameraContainer.classList.remove('hidden');
+        capturedBlob = null;
+      } catch (err) {
+        alert("Camera access denied: " + err.message);
+      }
+    });
+
+    // Submit form
+    document.getElementById('enrollForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!capturedBlob) {
+        alert("Please capture a photo first!");
+        return;
+      }
+
+      const form = e.target;
+      const formData = new FormData();
+      formData.append("username", form.username.value);
+      formData.append("password", form.password.value);
+      formData.append("role", "student"); // Fixed role as student
+      formData.append("rfid_uid", form.rfid_uid.value);
+      formData.append("image_file", capturedBlob, "snapshot.jpg");
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/accounts/enroll", {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          responseBox.innerHTML = `
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              <strong>${result.detail}</strong><br>
+              Username: ${result.user.username}<br>
+              Role: Student<br>
+              <img src="${result.user.image_url}" class="mt-2 mx-auto rounded-lg w-32">
+            </div>`;
+          
+          // Reset form and camera
+          form.reset();
+          previewContainer.classList.add('hidden');
+          startCameraBtn.classList.remove('hidden');
+        } else {
+          responseBox.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">${result.detail || "Error"}</div>`;
+        }
+      } catch (error) {
+        responseBox.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Network error: ${error.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
