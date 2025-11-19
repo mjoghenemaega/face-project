@@ -23,23 +23,32 @@ class EnrollUserView(APIView):
         password = request.POST.get("password")
         role = request.POST.get("role")
         rfid_uid = request.POST.get("rfid_uid")
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
         image_file = request.FILES.get("image_file")
 
         # Validation
         if not all([username, password, role, rfid_uid, image_file]):
             return Response(
-                {"detail": "All fields are required"}, 
+                {"detail": "username, password, role, rfid_uid, and image are required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate first_name and last_name if provided
+        if not first_name or not last_name:
+            return Response(
+                {"detail": "first_name and last_name are required"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if User.objects.filter(username=username).exists():
             return Response(
-                {"detail": "username exists"}, 
+                {"detail": "username already exists"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         if User.objects.filter(rfid_uid=rfid_uid).exists():
             return Response(
-                {"detail": "rfid exists"}, 
+                {"detail": "rfid_uid already exists"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -51,26 +60,28 @@ class EnrollUserView(APIView):
             cropped = detect_and_crop_face(pil_img)
             if cropped is None:
                 return Response(
-                    {"detail": "no face found in enrollment image"}, 
+                    {"detail": "No face detected in enrollment image"}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
             # Compute perceptual hash
             ph = compute_phash(cropped)
-            ph_hex = ph.__str__()
+            ph_hex = phash_to_hex(ph)  # Use phash_to_hex function
             
         except Exception as e:
             return Response(
-                {"detail": f"invalid image: {str(e)}"}, 
+                {"detail": f"Invalid image: {str(e)}"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ✅ Create the new user
+        # ✅ Create the new user with full name
         user = User.objects.create_user(
             username=username,
             password=password,
             role=role,
             rfid_uid=rfid_uid,
+            first_name=first_name,
+            last_name=last_name,
         )
         user.face_hash = ph_hex
 
@@ -97,10 +108,13 @@ class EnrollUserView(APIView):
             user.save()
             
             return Response({
-                "detail": "user enrolled successfully",
+                "detail": "User enrolled successfully",
                 "user": {
                     "id": user.id,
                     "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "full_name": user.get_full_name(),
                     "role": user.role,
                     "rfid_uid": user.rfid_uid,
                     "face_hash": user.face_hash,
@@ -113,7 +127,7 @@ class EnrollUserView(APIView):
             user.delete()
             return Response(
                 {"detail": f"Failed to upload image: {str(e)}"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 

@@ -8,15 +8,15 @@
 </head>
 <body class="bg-gray-100">
     <!-- Navigation Bar - Full Width -->
-    <nav class="bg-blue-600 text-white w-full">
+    <nav class="bg-blue-600 text-white w-full sticky top-0 z-40 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <h1 class="text-2xl font-bold">Class Attendance System</h1>
-                <div class="flex items-center space-x-4">
-                    <span class="text-lg">Welcome, {{ request.user.get_full_name }}</span>
+            <div class="flex flex-col sm:flex-row justify-between h-auto sm:h-16 items-center py-3 sm:py-0 space-y-2 sm:space-y-0">
+                <h1 class="text-xl sm:text-2xl font-bold text-center sm:text-left">📊 Attendance System</h1>
+                <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <span class="text-sm sm:text-base text-center">Welcome, {{ request.user.get_full_name }}</span>
                     <form method="post" action="{% url 'logout' %}" class="inline">
                         {% csrf_token %}
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors">
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors text-sm sm:text-base">
                             Logout
                         </button>
                     </form>
@@ -26,26 +26,28 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">{{ user.get_username }} Class Dashboard</h1>
-            <p class="text-gray-600">Class Hours: 8:00 AM - 4:00 PM</p>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <!-- Header -->
+        <div class="mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ request.user.username }}'s Class Dashboard</h1>
+            <p class="text-sm sm:text-base text-gray-600">Class Hours: 8:00 AM - 4:00 PM</p>
         </div>
+
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-                <h3 class="text-lg font-medium text-gray-500">Total Students</h3>
-                <p class="mt-2 text-4xl font-bold text-blue-600">{{ total_students }}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+                <h3 class="text-sm sm:text-lg font-medium text-gray-500">Total Students</h3>
+                <p class="mt-2 text-3xl sm:text-4xl font-bold text-blue-600">{{ total_students }}</p>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-                <h3 class="text-lg font-medium text-gray-500">Present Today</h3>
-                <p class="mt-2 text-4xl font-bold text-green-600">{{ present_today }}</p>
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+                <h3 class="text-sm sm:text-lg font-medium text-gray-500">Present Today</h3>
+                <p class="mt-2 text-3xl sm:text-4xl font-bold text-green-600">{{ present_today }}</p>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-                <h3 class="text-lg font-medium text-gray-500">Attendance Rate</h3>
-                <p class="mt-2 text-4xl font-bold text-indigo-600">
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+                <h3 class="text-sm sm:text-lg font-medium text-gray-500">Attendance Rate</h3>
+                <p class="mt-2 text-3xl sm:text-4xl font-bold text-indigo-600">
                     {% if total_students %}
-                        {{ present_today|divisibleby:total_students|floatformat:1 }}%
+                        {{ present_today|floatformat:0 }}%
                     {% else %}
                         0%
                     {% endif %}
@@ -53,147 +55,137 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    <!-- Date Filter -->
-    <div class="bg-white rounded-xl shadow-lg p-6">
-        <h3 class="text-lg font-medium text-gray-500 mb-4">Filter by Date</h3>
-        <div class="flex space-x-4">
-            <input type="date" id="dateFilter" 
-                   class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                   value="{{ today|date:'Y-m-d' }}">
-            <button onclick="filterByDate()" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                Apply Filter
-            </button>
+        <!-- Filter and Stats Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <!-- Date Filter -->
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-medium text-gray-500 mb-4">Filter by Date</h3>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                    <input type="date" id="dateFilter" 
+                           class="px-3 sm:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                           value="{{ today|date:'Y-m-d' }}">
+                    <button onclick="filterByDate()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap text-sm sm:text-base">
+                        Apply Filter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-medium text-gray-500 mb-4">Quick Stats</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-500">Late Arrivals</p>
+                        <p class="text-lg sm:text-xl font-bold text-yellow-600" id="lateCount">0</p>
+                    </div>
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-500">Early Departures</p>
+                        <p class="text-lg sm:text-xl font-bold text-orange-600" id="earlyCount">0</p>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-    <!-- Quick Stats -->
- <div class="bg-white rounded-xl shadow-lg p-6">
-    <h3 class="text-lg font-medium text-gray-500 mb-4">Quick Stats</h3>
-    <div class="grid grid-cols-2 gap-4">
-        <div>
-            <p class="text-sm text-gray-500">Late Arrivals Today</p>
-            <p class="text-xl font-bold text-yellow-600">
-                {% with late_count=0 %}
-                    {% for stat in student_stats %}
-                        {% if stat.is_late %}
-                            {% with late_count=late_count|add:1 %}{% endwith %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ late_count }}
-                {% endwith %}
-            </p>
-        </div>
-        <div>
-            <p class="text-sm text-gray-500">Early Departures</p>
-            <p class="text-xl font-bold text-orange-600">
-                {% with early_count=0 %}
-                    {% for stat in student_stats %}
-                        {% if stat.left_early %}
-                            {% with early_count=early_count|add:1 %}{% endwith %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ early_count }}
-                {% endwith %}
-            </p>
-        </div>
-    </div>
-</div>
-</div>
 
         <!-- Student List Table -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-blue-700">Students Attendance</h2>
-                <div class="flex space-x-2">
+            <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-lg sm:text-xl font-bold text-blue-700">Students Attendance</h2>
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <input type="text" 
                            placeholder="Search students..." 
-                           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           class="px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm flex-1 sm:flex-none"
                            id="searchInput">
-                             <button onclick="exportToCSV()" 
-                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="exportToCSV()" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
-                        Export to CSV
+                        <span class="hidden sm:inline">Export</span>
                     </button>
-                      <button onclick="printReport()" 
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-            </svg>
-            Print Report
-        </button>
+                    <button onclick="printReport()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        <span class="hidden sm:inline">Print</span>
+                    </button>
                 </div>
             </div>
             
+            <!-- Table (Scrollable on mobile) -->
             <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50">
+                <table class="w-full text-sm" id="attendanceTable">
+                    <thead class="bg-gray-50 sticky top-0">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Today's Status</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class In Time</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class Out Time</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attendance Rate</th>       </tr>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Today Status</th>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">In Time</th>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Out Time</th>
+                            <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overall Rate</th>
+                        </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         {% for stat in student_stats %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-12 w-12">
-                                        {% if stat.student.face_image %}
-                                            <img class="h-12 w-12 rounded-full object-cover border-2 border-gray-200" 
-                                                 src="{{ stat.student.face_image.url }}" 
-                                                 alt="{{ stat.student.get_full_name }}">
-                                        {% else %}
-                                            <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
-                                                <span class="text-xl text-gray-500">{{ stat.student.get_full_name|first }}</span>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ stat.student.get_full_name }}</div>
-                                        <div class="text-sm text-gray-500">{{ stat.student.username }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-4 py-2 inline-flex text-sm leading-5 font-semibold rounded-full 
+                        <tr class="hover:bg-gray-50 transition-colors">
+                           <td class="px-3 sm:px-6 py-4 whitespace-nowrap">
+    <div class="flex items-center gap-2 sm:gap-4">
+        <div class="flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12">
+            {% if stat.student.face_image %}
+                <img class="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover border-2 border-gray-200" 
+                     src="{{ stat.student.face_image }}" 
+                     alt="{{ stat.student.get_full_name }}"
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23ccc%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
+            {% else %}
+                <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
+                    {{ stat.student.first_name|first|upper }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="min-w-0">
+            <div class="text-xs sm:text-sm font-medium text-gray-900 truncate">{{ stat.student.get_full_name }}</div>
+            <div class="text-xs text-gray-500 truncate">@{{ stat.student.username }}</div>
+        </div>
+    </div>
+</td>
+                            <td class="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 sm:px-4 py-1 inline-flex text-xs sm:text-sm leading-5 font-semibold rounded-full 
                                     {% if stat.today_attendance %}
                                         bg-green-100 text-green-800
                                     {% else %}
                                         bg-red-100 text-red-800
                                     {% endif %}">
-                                    {{ stat.today_attendance|yesno:"Present,Absent" }}
+                                    {{ stat.today_attendance|yesno:"✓ Present,✗ Absent" }}
                                 </span>
                             </td>
-                            <!-- <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ stat.last_seen|default:"Never" }}
-                            </td> -->
-
-  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ stat.class_in_time|default:"--" }}
+                            <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                                <span class="{% if stat.is_late %}text-yellow-600 font-semibold{% endif %}">
+                                    {{ stat.class_in_time|default:"--" }}
+                                    {% if stat.is_late %}<span class="text-xs">⏰ Late</span>{% endif %}
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ stat.class_out_time|default:"--" }}
+                            <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                                <span class="{% if stat.left_early %}text-orange-600 font-semibold{% endif %}">
+                                    {{ stat.class_out_time|default:"--" }}
+                                    {% if stat.left_early %}<span class="text-xs">🚪 Early</span>{% endif %}
+                                </span>
                             </td>
-
-
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="w-48 bg-gray-200 rounded-full h-2.5">
-                                        <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
+                            <td class="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-16 sm:w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" 
                                              style="width: {{ stat.attendance_percentage }}%">
                                         </div>
                                     </div>
-                                    <span class="ml-4 text-sm font-medium text-gray-700">
-                                        {{ stat.attendance_percentage|floatformat:1 }}%
-                                    </span>
+                                    <div class="text-right">
+                                        <span class="text-xs sm:text-sm font-medium text-gray-700">{{ stat.attendance_percentage|floatformat:0 }}%</span>
+                                        <br>
+                                        <span class="text-xs {% if stat.attendance_percentage >= 75 %}text-green-600 font-semibold{% else %}text-red-600{% endif %}">
+                                            {% if stat.attendance_percentage >= 75 %}✓ Met{% else %}✗ Below 75%{% endif %}
+                                        </span>
+                                    </div>
                                 </div>
                             </td>
-                            
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -203,6 +195,24 @@
     </main>
 
     <script>
+        // Initialize stats
+        function updateStats() {
+            const rows = document.querySelectorAll('tbody tr:not([style*="display: none"])');
+            let lateCount = 0;
+            let earlyCount = 0;
+
+            rows.forEach(row => {
+                const inTimeCell = row.querySelectorAll('td')[2].textContent;
+                const outTimeCell = row.querySelectorAll('td')[3].textContent;
+                
+                if (inTimeCell.includes('Late')) lateCount++;
+                if (outTimeCell.includes('Early')) earlyCount++;
+            });
+
+            document.getElementById('lateCount').textContent = lateCount;
+            document.getElementById('earlyCount').textContent = earlyCount;
+        }
+
         // Search functionality
         const searchInput = document.getElementById('searchInput');
         const tableRows = document.querySelectorAll('tbody tr');
@@ -211,56 +221,69 @@
             const searchTerm = e.target.value.toLowerCase();
 
             tableRows.forEach(row => {
-                const studentName = row.querySelector('.text-gray-900').textContent.toLowerCase();
-                const username = row.querySelector('.text-gray-500').textContent.toLowerCase();
+                const fullName = row.querySelector('.text-gray-900') ? row.querySelector('.text-gray-900').textContent.toLowerCase() : '';
+                const username = row.querySelector('.text-gray-500') ? row.querySelector('.text-gray-500').textContent.toLowerCase() : '';
 
-                if (studentName.includes(searchTerm) || username.includes(searchTerm)) {
+                if (fullName.includes(searchTerm) || username.includes(searchTerm)) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            updateStats();
         });
 
-        // Add hover effects
-        tableRows.forEach(row => {
-            row.addEventListener('mouseover', () => {
-                row.classList.add('bg-gray-50');
-            });
-            row.addEventListener('mouseout', () => {
-                row.classList.remove('bg-gray-50');
-            });
-        });
-    </script>
-     <script>
-        // ...existing search and hover scripts...
+        // Filter by date
+          function filterByDate() {
+        const dateInput = document.getElementById('dateFilter').value;
+        if (!dateInput) {
+            alert('Please select a date');
+            return;
+        }
+        
+        // Redirect with date parameter
+        window.location.href = `?date=${dateInput}`;
+    }
 
+    // Auto-apply filter when date changes
+    document.getElementById('dateFilter').addEventListener('change', function() {
+        const dateInput = this.value;
+        if (dateInput) {
+            window.location.href = `?date=${dateInput}`;
+        }
+    });
+
+    // Initialize on load
+    updateStats();
+
+        // Export to CSV
         function exportToCSV() {
             const table = document.getElementById('attendanceTable');
             let csv = [];
             
             // Get headers
-            let headers = [];
-            for(let cell of table.querySelectorAll('thead th')) {
-                headers.push(cell.textContent.trim());
-            }
+            let headers = ['Student Name', 'Username', 'Today Status', 'Class In', 'Class Out', 'Overall Attendance %', 'Target Met'];
             csv.push(headers.join(','));
             
-            // Get rows
-            for(let row of table.querySelectorAll('tbody tr')) {
+            // Get visible rows only
+            for(let row of table.querySelectorAll('tbody tr:not([style*="display: none"])')) {
                 let rowData = [];
-                // Student name
-                rowData.push(row.querySelector('.text-gray-900').textContent);
-                // Status
-                rowData.push(row.querySelector('.rounded-full').textContent.trim());
-                // Class in time
-                rowData.push(row.querySelectorAll('td')[2].textContent.trim());
-                // Class out time
-                rowData.push(row.querySelectorAll('td')[3].textContent.trim());
-                // Attendance rate
-                rowData.push(row.querySelector('.text-gray-700').textContent.trim());
+                const cells = row.querySelectorAll('td');
                 
-                csv.push(rowData.join(','));
+                // Student name
+                const fullName = cells[0].querySelector('.text-gray-900')?.textContent.trim() || '';
+                const username = cells[0].querySelector('.text-gray-500')?.textContent.trim() || '';
+                const status = cells[1].textContent.trim();
+                const inTime = cells[2].textContent.trim().split('\n')[0];
+                const outTime = cells[3].textContent.trim().split('\n')[0];
+                
+                // Extract percentage and target
+                const percentageText = cells[4].querySelector('.text-gray-700')?.textContent.trim() || '0%';
+                const targetText = cells[4].querySelector('.font-semibold')?.textContent.trim() || 'No';
+                
+                rowData = [fullName, username, status, inTime, outTime, percentageText, targetText];
+                csv.push('"' + rowData.join('","') + '"');
             }
             
             // Download CSV
@@ -273,6 +296,53 @@
             link.click();
             document.body.removeChild(link);
         }
+
+        // Print Report
+        function printReport() {
+            const table = document.getElementById('attendanceTable').outerHTML;
+            const printWindow = window.open('', '', 'height=600,width=900');
+            
+            const reportDate = document.getElementById('dateFilter').value;
+            const teacherName = '{{ request.user.get_full_name }}';
+            const courseName = ' {{ request.user.username }}';
+            
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Attendance Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1, h2 { color: #333; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                        th { background-color: #f0f0f0; font-weight: bold; }
+                        tr:nth-child(even) { background-color: #f9f9f9; }
+                        .header { margin-bottom: 30px; }
+                        .green { color: green; font-weight: bold; }
+                        .red { color: red; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>📊 Class Attendance Report</h1>
+                        <h2>Course: ${courseName}</h3>
+                        <h2>Teacher: ${teacherName}</h2>
+                        <p><strong>Report Date:</strong> ${reportDate || new Date().toLocaleDateString()}</p>
+                        <p><strong>Class Hours:</strong> 8:00 AM - 4:00 PM</p>
+                    </div>
+                    ${table}
+                    <p style="margin-top: 30px; text-align: center; color: #666;">
+                        Generated on: ${new Date().toLocaleString()}
+                    </p>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => printWindow.print(), 250);
+        }
+
+        // Initialize on load
+        updateStats();
     </script>
 </body>
 </html>

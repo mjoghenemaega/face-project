@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-v1^b3$as9drfe13&hrssss8qn8d8c*$pld8mjn=gtw83)1zc=5711&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['*','aws-1-eu-north-1.pooler.supabase.com']
 
 

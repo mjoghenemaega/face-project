@@ -3,64 +3,118 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Enrollment</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
   <!-- Navigation Bar -->
-  <nav class="bg-blue-600 text-white p-4">
-    <div class="container mx-auto flex justify-between items-center">
-      <h1 class="text-xl font-bold">Face Attendance System</h1>
-      <div class="flex items-center space-x-4">
-   
-        <span>Welcome, student </span>
-        <a href="#"" class="bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded">Logout</a>
-      </div>
+  <nav class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto flex justify-between items-center px-2 md:px-0">
+      <h1 class="text-lg md:text-2xl font-bold">Class Attendance System</h1>
+      <span class="text-sm md:text-base">Student Enrollment</span>
     </div>
   </nav>
 
-  <div class="container mx-auto p-6">
-    <div class="bg-white rounded-2xl shadow-xl max-w-lg mx-auto p-8">
-      <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Enroll New Student</h2>
+  <div class="container mx-auto p-4 md:p-6 max-h-screen overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md mx-auto p-6 md:p-8 mb-6">
+      <h2 class="text-xl md:text-2xl font-bold text-center text-blue-700 mb-2">Enroll New Student</h2>
+      <p class="text-center text-gray-500 text-sm mb-6">Create your face recognition profile</p>
 
       <form id="enrollForm" enctype="multipart/form-data" class="space-y-4">
+        <!-- First Name -->
+          {% csrf_token %}
         <div>
-          <label class="block text-gray-700 font-medium">Username</label>
-          <input type="text" name="username" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400" required>
+          <label class="block text-gray-700 font-medium text-sm mb-2">First Name</label>
+          <input type="text" name="first_name" 
+                 class="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" 
+                 placeholder="Enter first name" required>
         </div>
 
+        <!-- Last Name -->
         <div>
-          <label class="block text-gray-700 font-medium">Password</label>
-          <input type="password" name="password" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400" required>
+          <label class="block text-gray-700 font-medium text-sm mb-2">Last Name</label>
+          <input type="text" name="last_name" 
+                 class="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" 
+                 placeholder="Enter last name" required>
+        </div>
+
+        <!-- Username -->
+        <div>
+          <label class="block text-gray-700 font-medium text-sm mb-2">Username</label>
+          <input type="text" name="username" 
+                 class="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" 
+                 placeholder="Enter username" required>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-gray-700 font-medium text-sm mb-2">Password</label>
+          <input type="password" name="password" 
+                 class="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" 
+                 placeholder="Enter password" required>
         </div>
 
         <!-- Hidden role field -->
         <input type="hidden" name="role" value="student">
 
+        <!-- RFID UID -->
         <div>
-          <label class="block text-gray-700 font-medium">RFID UID</label>
-          <input type="text" name="rfid_uid" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400" required>
+          <label class="block text-gray-700 font-medium text-sm mb-2">RFID UID</label>
+          <input type="text" name="rfid_uid" 
+                 class="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" 
+                 placeholder="Scan RFID card" required>
         </div>
 
         <!-- Camera Section -->
-        <div class="space-y-2">
-          <label class="block text-gray-700 font-medium">Photo Capture</label>
-          <button type="button" id="startCamera" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full">Start Camera</button>
-          <div id="cameraContainer" class="hidden">
-            <video id="camera" autoplay class="rounded-lg border border-gray-300 w-full"></video>
-            <button type="button" id="captureBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full mt-2">Capture Photo</button>
+        <div class="space-y-3 bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+          <label class="block text-gray-700 font-semibold text-sm">📷 Photo Capture</label>
+          
+          <!-- Start Camera Button -->
+          <button type="button" id="startCamera" 
+                  class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition transform hover:scale-105">
+            Start Camera
+          </button>
+
+          <!-- Camera Container (Hidden by default) -->
+          <div id="cameraContainer" class="hidden space-y-3">
+            <video id="camera" autoplay playsinline class="rounded-lg border-2 border-gray-300 w-full bg-black"></video>
+            <button type="button" id="captureBtn" 
+                    class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition">
+              📸 Capture Photo
+            </button>
           </div>
+
+          <!-- Hidden Canvas -->
           <canvas id="snapshot" class="hidden"></canvas>
-          <div id="previewContainer" class="hidden mt-2">
-            <img id="preview" class="rounded-lg border border-gray-300 w-full">
-            <button type="button" id="retakePhoto" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg w-full mt-2">Retake Photo</button>
+
+          <!-- Preview Container (Hidden by default) -->
+          <div id="previewContainer" class="hidden space-y-3">
+            <div class="rounded-lg border-2 border-gray-300 overflow-hidden bg-gray-100">
+              <img id="preview" class="w-full h-auto object-cover max-h-96">
+            </div>
+            <div class="flex gap-2">
+              <button type="button" id="retakePhoto" 
+                      class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition">
+                🔄 Retake
+              </button>
+              <button type="button" id="confirmPhoto" 
+                      class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition">
+                ✓ Confirm
+              </button>
+            </div>
           </div>
         </div>
 
-        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full font-semibold">Enroll</button>
+        <!-- Submit Button -->
+        <button type="submit" 
+                class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-3 rounded-lg font-bold text-lg transition transform hover:scale-105 shadow-lg">
+          ✨ Enroll Student
+        </button>
       </form>
 
-      <div id="response" class="mt-6 text-center"></div>
+      <!-- Response Message -->
+      <div id="response" class="mt-6"></div>
     </div>
   </div>
 
@@ -73,19 +127,29 @@
     const previewContainer = document.getElementById('previewContainer');
     const preview = document.getElementById('preview');
     const retakeBtn = document.getElementById('retakePhoto');
+    const confirmBtn = document.getElementById('confirmPhoto');
     const responseBox = document.getElementById('response');
+    const enrollForm = document.getElementById('enrollForm');
+    
     let capturedBlob = null;
     let stream = null;
 
     // Start camera button click handler
     startCameraBtn.addEventListener('click', async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
         video.srcObject = stream;
         cameraContainer.classList.remove('hidden');
         startCameraBtn.classList.add('hidden');
+        responseBox.innerHTML = '';
       } catch (err) {
-        alert("Camera access denied: " + err.message);
+        showError("Camera access denied: " + err.message);
       }
     });
 
@@ -102,70 +166,113 @@
         previewContainer.classList.remove('hidden');
         cameraContainer.classList.add('hidden');
         
-        // Stop the camera
         if (stream) {
           stream.getTracks().forEach(track => track.stop());
         }
-      }, 'image/jpeg', 0.8); // Added quality parameter
+      }, 'image/jpeg', 0.9);
     });
 
     // Retake photo
     retakeBtn.addEventListener('click', async () => {
       previewContainer.classList.add('hidden');
+      URL.revokeObjectURL(preview.src);
+      capturedBlob = null;
+      
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
         video.srcObject = stream;
         cameraContainer.classList.remove('hidden');
-        capturedBlob = null;
       } catch (err) {
-        alert("Camera access denied: " + err.message);
+        showError("Camera access denied: " + err.message);
       }
     });
+
+    // Confirm photo
+    confirmBtn.addEventListener('click', () => {
+      // Just proceed to submit form
+    });
+
+    // Helper function to show errors
+    function showError(message) {
+      responseBox.innerHTML = `
+        <div class="bg-red-100 border-2 border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm md:text-base">
+          <strong>❌ Error:</strong> ${message}
+        </div>`;
+    }
+
+    // Helper function to show success
+    function showSuccess(message, fullName, imageUrl) {
+      responseBox.innerHTML = `
+        <div class="bg-green-100 border-2 border-green-400 text-green-700 px-4 py-3 rounded-lg text-sm md:text-base space-y-3">
+          <div>
+            <strong>✅ Success!</strong><br>
+            ${message}<br>
+            <span class="text-lg font-bold">Welcome, ${fullName}!</span>
+          </div>
+          ${imageUrl ? `<img src="${imageUrl}" class="w-32 h-32 object-cover rounded-lg mx-auto border-2 border-green-400">` : ''}
+        </div>`;
+    }
 
     // Submit form
     const BACKEND_URL = window.location.origin;
 
-  document.getElementById('enrollForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!capturedBlob) {
-      alert("Please capture a photo first!");
-      return;
-    }
-
-    const form = e.target;
-    const formData = new FormData();
-    formData.append("username", form.username.value);
-    formData.append("password", form.password.value);
-    formData.append("role", "student");
-    formData.append("rfid_uid", form.rfid_uid.value);
-    formData.append("image_file", capturedBlob, "snapshot.jpg");
-
-    try {
-      const response = await fetch(`${BACKEND_URL}/accounts/enroll`, {  // Use BACKEND_URL
-        method: "POST",
-        body: formData
-      });
-
-      const result = await response.json();
-      if (response.ok) {
-        responseBox.innerHTML = `
-          <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            <strong>${result.detail}</strong><br>
-            Username: ${result.user.username}<br>
-            Role: Student<br>
-            <img src="${result.user.image_url}" class="mt-2 mx-auto rounded-lg w-32">
-          </div>`;
-        
-        form.reset();
-        previewContainer.classList.add('hidden');
-        startCameraBtn.classList.remove('hidden');
-      } else {
-        responseBox.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">${result.detail || "Error"}</div>`;
+    enrollForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      
+      if (!capturedBlob) {
+        showError("Please capture a photo first!");
+        return;
       }
-    } catch (error) {
-      responseBox.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Network error: ${error.message}</div>`;
-    }
-  });
+
+      // Disable submit button
+      const submitBtn = enrollForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '⏳ Enrolling...';
+
+      const form = e.target;
+      const formData = new FormData();
+      formData.append("first_name", form.first_name.value);
+      formData.append("last_name", form.last_name.value);
+      formData.append("username", form.username.value);
+      formData.append("password", form.password.value);
+      formData.append("role", "student");
+      formData.append("rfid_uid", form.rfid_uid.value);
+      formData.append("image_file", capturedBlob, "snapshot.jpg");
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/accounts/enroll`, {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+          showSuccess(
+            `${result.user.username} enrolled successfully!`,
+            result.user.full_name,
+            result.user.image_url
+          );
+          form.reset();
+          previewContainer.classList.add('hidden');
+          startCameraBtn.classList.remove('hidden');
+          capturedBlob = null;
+        } else {
+          showError(result.detail || "Registration failed");
+        }
+      } catch (error) {
+        showError("Network error: " + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '✨ Enroll Student';
+      }
+    });
   </script>
 </body>
 </html>

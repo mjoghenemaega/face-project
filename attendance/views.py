@@ -378,6 +378,65 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
 
+#@login_required
+# def teacher_dashboard(request):
+#     if request.user.role != 'teacher':
+#         return redirect('login')
+    
+#     # Get teacher's students
+#     teacher_students = TeacherStudent.objects.filter(teacher=request.user).select_related('student')
+#     students = [ts.student for ts in teacher_students]
+#     total_students = len(students)
+
+#         # Get date filter
+#     selected_date = request.GET.get('date', timezone.now().date().isoformat())
+#     try:
+#         filter_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+#     except ValueError:
+#         filter_date = timezone.now().date()
+    
+#     # Get attendance stats
+#     today = timezone.now().date()
+#     attendance_data = AttendanceRecord.objects.filter(
+#         student__in=students,
+#         timestamp__date=today
+#     ).select_related('student')
+
+#     # Calculate attendance statistics
+#     student_stats = []
+#     for student in students:
+#         today_attendance = attendance_data.filter(student=student)
+#         class_in = today_attendance.filter(attendance_type='IN').first()
+#         class_out = today_attendance.filter(attendance_type='OUT').first()
+        
+#         total_days = AttendanceRecord.objects.filter(
+#             student=student, 
+#             attendance_type='IN',
+#             granted=True
+#         ).count()
+        
+#         student_stats.append({
+#             'student': student,
+#             'today_attendance': class_in is not None and class_in.granted,
+#             'total_attendance': total_days,
+#             'attendance_percentage': (total_days / total_students * 100) if total_students > 0 else 0,
+#             'class_in_time': class_in.timestamp.strftime('%H:%M %p') if class_in else None,
+#             'class_out_time': class_out.timestamp.strftime('%H:%M %p') if class_out else None,
+#             'is_late': class_in.is_late if class_in else False,
+#             'left_early': class_out.is_early_departure if class_out else False
+#         })
+
+#     context = {
+#         'student_stats': student_stats,
+#         'total_students': len(students),
+#         'present_today': sum(1 for stat in student_stats if stat['today_attendance']),
+#         'today': filter_date,
+#         'date_filter': selected_date
+#     }
+    
+#     return render(request, 'accounts/teacher_dashboard.html', context)
+
+
 @login_required
 def teacher_dashboard(request):
     if request.user.role != 'teacher':
@@ -388,54 +447,80 @@ def teacher_dashboard(request):
     students = [ts.student for ts in teacher_students]
     total_students = len(students)
 
-        # Get date filter
-    selected_date = request.GET.get('date', timezone.now().date().isoformat())
+    # Get date filter from query parameter
+    selected_date = request.GET.get('date')
     try:
-        filter_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        if selected_date:
+            filter_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        else:
+            filter_date = timezone.now().date()
     except ValueError:
         filter_date = timezone.now().date()
     
-    # Get attendance stats
-    today = timezone.now().date()
+    # Get attendance records for the selected date
     attendance_data = AttendanceRecord.objects.filter(
         student__in=students,
-        timestamp__date=today
+        timestamp__date=filter_date,
+        granted=True
     ).select_related('student')
 
     # Calculate attendance statistics
     student_stats = []
     for student in students:
-        today_attendance = attendance_data.filter(student=student)
-        class_in = today_attendance.filter(attendance_type='IN').first()
-        class_out = today_attendance.filter(attendance_type='OUT').first()
+        # Get attendance records for this student on the selected date
+        student_attendance_today = attendance_data.filter(student=student)
+        class_in = student_attendance_today.filter(attendance_type='IN').first()
+        class_out = student_attendance_today.filter(attendance_type='OUT').first()
         
-        total_days = AttendanceRecord.objects.filter(
+        # Calculate overall attendance percentage (all-time)
+        # Count all unique dates where student checked IN and was granted
+        student_in_records = AttendanceRecord.objects.filter(
             student=student, 
             attendance_type='IN',
             granted=True
-        ).count()
+        )
         
-        student_stats.append({
+        total_present_days = student_in_records.values('timestamp__date').distinct().count()
+        
+        # Get all unique dates when attendance was recorded (for any student)
+        # This represents total class days
+        all_class_dates = AttendanceRecord.objects.filter(
+            attendance_type='IN',
+            granted=True
+        ).values('timestamp__date').distinct().count()
+        
+        # Fallback: if no class dates recorded yet, use 1 to avoid division by zero
+        max_possible_days = max(1, all_class_dates)
+        
+        attendance_percentage = (total_present_days / max_possible_days * 100) if max_possible_days > 0 else 0
+        attendance_percentage = min(100, attendance_percentage)  # Cap at 100%
+        
+        # Determine if present today
+        today_present = class_in is not None and class_in.granted
+        
+        stat = {
             'student': student,
-            'today_attendance': class_in is not None and class_in.granted,
-            'total_attendance': total_days,
-            'attendance_percentage': (total_days / total_students * 100) if total_students > 0 else 0,
-            'class_in_time': class_in.timestamp.strftime('%H:%M %p') if class_in else None,
-            'class_out_time': class_out.timestamp.strftime('%H:%M %p') if class_out else None,
+            'today_attendance': today_present,
+            'class_in_time': class_in.timestamp.strftime('%H:%M') if class_in else '--',
+            'class_out_time': class_out.timestamp.strftime('%H:%M') if class_out else '--',
             'is_late': class_in.is_late if class_in else False,
-            'left_early': class_out.is_early_departure if class_out else False
-        })
+            'left_early': class_out.is_early_departure if class_out else False,
+            'attendance_percentage': attendance_percentage,
+        }
+        student_stats.append(stat)
+
+    # Calculate present today count
+    present_today = sum(1 for stat in student_stats if stat['today_attendance'])
 
     context = {
         'student_stats': student_stats,
-        'total_students': len(students),
-        'present_today': sum(1 for stat in student_stats if stat['today_attendance']),
+        'total_students': total_students,
+        'present_today': present_today,
         'today': filter_date,
-        'date_filter': selected_date
+        'date_filter': selected_date or filter_date.isoformat(),
     }
     
     return render(request, 'accounts/teacher_dashboard.html', context)
-
 def teacher_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
