@@ -521,17 +521,28 @@ def teacher_dashboard(request):
     }
     
     return render(request, 'accounts/teacher_dashboard.html', context)
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
 def teacher_login(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        
-        if user and user.role == 'teacher':
-            login(request, user)
-            return redirect('teacher_dashboard')
-            
-    return render(request, 'accounts/teacher_login.html')
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            if user.role == 'teacher':
+                login(request, user)
+                return redirect('teacher_dashboard')
+            else:
+                messages.error(request, "Only teachers can login here")
+                return render(request, 'accounts/teacher_login.html', {'form': form})
+        else:
+            messages.error(request, "Invalid username or password")
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'accounts/teacher_login.html', {'form': form})
 
 from django.contrib import messages
 
