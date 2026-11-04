@@ -168,9 +168,9 @@ MEDIA_ROOT = BASE_DIR/"media"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 cloudinary.config(
-    cloud_name='dbcahe6sr',
-    api_key='775613151785821',
-    api_secret="rTfd5vC-I3deTxwIoFK1cCWus48"
+    cloud_name='dsr',
+    api_key='21',
+    api_secret="r"
 )
 
 
