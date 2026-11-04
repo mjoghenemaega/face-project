@@ -22,8 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-v1^b3$as9drfe13&hrssss8qn8d8c*$pld8mjn=gtw83)1zc=5711&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -90,16 +88,6 @@ WSGI_APPLICATION = 'face_attendance.wsgi.application'
 # }
 
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": 'postgres',
-        "USER": 'postgres.egfjkpuvctvsgavwkmzr',
-        "PASSWORD": 'wOFp3XJ2VIp55vQs',
-        "HOST": 'aws-1-eu-north-1.pooler.supabase.com',
-        "PORT": 6543,
-    }
-}
 
 
 LOGIN_URL = 'teacher_login'
